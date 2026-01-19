@@ -1,0 +1,145 @@
+<style>
+bodySlot{margin:0;padding:0;font-family:'Arial Black',sans-serif;text-align:center;overflow-x:hidden;}
+h1Slot{font-size:2.5em;color:gold;margin:20px 0 10px 0;text-shadow:0 0 10px #ff0,0 0 20px #ffa500;}
+#balanceSlot{font-size:1.8em;color:#0f0;margin-bottom:10px;text-shadow:0 0 8px #0f0,0 0 15px #0ff;}
+#marqueeSlot{font-size:1.2em;color:gold;overflow:hidden;white-space:nowrap;margin-bottom:10px;text-shadow:0 0 5px #ff0;animation:scroll 15s linear infinite;}
+@keyframes scroll{0%{transform:translateX(100%);}100%{transform:translateX(-100%);}}
+.slot-machine{display:flex;justify-content:center;margin:20px auto;overflow:hidden;height:120px;position:relative;}
+.reel{width:70px;height:120px;border:3px solid gold;margin:0 5px;background:linear-gradient(#222,#000);border-radius:12px;overflow:hidden;box-shadow:0 0 20px #ff0 inset,0 0 15px #fff;position:relative;}
+.reel-track{position:absolute;top:0;left:0;width:100%;transition: transform 0.5s cubic-bezier(0.25,0.46,0.45,0.94);}
+.reel-track img{width:70px;height:70px;display:block;margin:0 auto;box-shadow:0 0 10px #fff;animation:glow 1s infinite alternate;}
+@keyframes glow{0%{filter:drop-shadow(0 0 2px #fff);}100%{filter:drop-shadow(0 0 6px #ff0);}}
+#buttons,#startButton{margin:10px 0;}
+#buttons button,#startButton button{margin:5px;padding:12px 18px;font-size:1.1em;border:none;border-radius:8px;cursor:pointer;background:gold;color:#111;font-weight:bold;text-shadow:0 0 2px #000;box-shadow:0 0 10px #ff0 inset;transition:0.2s;}
+#buttons button:hover,#startButton button:hover{background:orange;}
+#messageSlot{margin:15px;font-size:1.3em;color:yellow;min-height:24px;text-shadow:0 0 5px #fff;}
+.particle{position:absolute;font-size:1.6em;animation:fly 1.2s linear forwards;}
+@keyframes fly{0%{opacity:1;transform:translateY(0) scale(1);}100%{opacity:0;transform:translateY(-200px) scale(2);}}
+.flash{animation: flashBG 0.3s ease-in-out;}
+@keyframes flashBG{0%{background:#222;}50%{background:#ff0;}100%{background:#222;}}
+</style>
+
+<div id="jackpotSlot">
+<h1Slot>Jackpot Royale 🎰</h1Slot>
+<div id="marqueeSlot">Welcome to Jackpot Royale – Spin & Win Big! 🎉</div>
+<div id="balanceSlot">Balance: 100,000 💰</div>
+
+<div class="slot-machine">
+<div class="reel" id="reel1"><div class="reel-track"></div></div>
+<div class="reel" id="reel2"><div class="reel-track"></div></div>
+<div class="reel" id="reel3"><div class="reel-track"></div></div>
+<div class="reel" id="reel4"><div class="reel-track"></div></div>
+<div class="reel" id="reel5"><div class="reel-track"></div></div>
+</div>
+
+<div id="buttons">
+<button data-bet="100">100</button>
+<button data-bet="500">500</button>
+<button data-bet="1000">1000</button>
+<button data-bet="5000">5000</button>
+<button data-bet="10000">10000</button>
+<button data-bet="50000">50000</button>
+</div>
+
+<div id="startButton">
+<button id="startSpin">Start Spin</button>
+</div>
+
+<div id="messageSlot"></div>
+
+<audio id="spinSound" src="https://www.soundjay.com/mechanical/sounds/mechanical-spin-01.mp3"></audio>
+<audio id="stopSound" src="https://www.soundjay.com/mechanical/sounds/mechanical-stop-01.mp3"></audio>
+<audio id="winSound" src="https://www.soundjay.com/misc/sounds/bell-ringing-05.mp3"></audio>
+
+<script>
+let balance=100000,currentBet=100;
+const reels=[1,2,3,4,5].map(i=>document.getElementById(`reel${i}`).querySelector('.reel-track'));
+const message=document.getElementById('messageSlot');
+const spinSound=document.getElementById('spinSound');
+const stopSound=document.getElementById('stopSound');
+const winSound=document.getElementById('winSound');
+const updateBalance=()=>document.getElementById('balanceSlot').textContent=`Balance: ${balance.toLocaleString()} 💰`;
+
+const themes={
+Fruits:[
+https://cdn.pixabay.com/photo/2017/01/20/00/30/watermelon-1995051_1280.png,
+https://cdn.pixabay.com/photo/2018/01/15/07/51/lemon-3086450_1280.png,
+https://cdn.pixabay.com/photo/2018/01/15/09/15/grapes-3086465_1280.png,
+https://cdn.pixabay.com/photo/2017/01/20/00/30/orange-1995050_1280.png,
+https://cdn.pixabay.com/photo/2022/04/08/14/20/cherries-7119732_1280.png
+],
+Gems:[
+https://cdn.pixabay.com/photo/2016/04/01/09/49/diamond-1304369_1280.png,
+https://cdn.pixabay.com/photo/2017/01/20/00/30/ruby-1995046_1280.png,
+https://cdn.pixabay.com/photo/2017/01/20/00/30/amethyst-1995045_1280.png,
+https://cdn.pixabay.com/photo/2017/01/20/00/30/emerald-1995047_1280.png,
+https://cdn.pixabay.com/photo/2017/01/20/00/30/sapphire-1995048_1280.png
+],
+Food:[
+https://cdn.pixabay.com/photo/2017/01/20/00/30/pizza-1995049_1280.png,
+https://cdn.pixabay.com/photo/2017/01/20/00/30/burger-1995052_1280.png,
+https://cdn.pixabay.com/photo/2017/01/20/00/30/donut-1995053_1280.png,
+https://cdn.pixabay.com/photo/2017/01/20/00/30/fries-1995054_1280.png,
+https://cdn.pixabay.com/photo/2017/01/20/00/30/candy-1995055_1280.png
+],
+Holiday:[
+https://cdn.pixabay.com/photo/2013/07/12/11/58/christmas-tree-150717_1280.png,
+https://cdn.pixabay.com/photo/2013/07/12/11/59/santa-claus-150718_1280.png,
+https://cdn.pixabay.com/photo/2016/12/04/14/59/gift-1880528_1280.png,
+https://cdn.pixabay.com/photo/2017/01/20/00/30/party-popper-1995056_1280.png,
+https://cdn.pixabay.com/photo/2017/01/20/00/30/fireworks-1995057_1280.png
+],
+Games:[
+https://cdn.pixabay.com/photo/2014/04/02/11/26/game-307626_1280.png,
+https://cdn.pixabay.com/photo/2014/04/02/11/26/joystick-307625_1280.png,
+https://cdn.pixabay.com/photo/2014/04/02/11/26/target-307624_1280.png,
+https://cdn.pixabay.com/photo/2014/04/02/11/26/shield-307623_1280.png,
+https://cdn.pixabay.com/photo/2014/04/02/11/26/sword-307622_1280.png
+]
+};
+const themeNames=Object.keys(themes);
+const todayTheme=themes[themeNames[new Date().getDate()%themeNames.length]];
+
+function spawnParticle(symbol){
+const p=document.createElement('div');
+p.className='particle'; p.textContent=symbol;
+p.style.left=(window.innerWidth/2+Math.random()*120-60)+'px';
+p.style.top=(window.innerHeight/2+Math.random()*60-30)+'px';
+document.body.appendChild(p);
+setTimeout(()=>document.body.removeChild(p),1200);
+}
+function flashBackground(){document.body.classList.add('flash');setTimeout(()=>document.body.classList.remove('flash'),300);}
+
+document.querySelectorAll('#buttons button').forEach(btn=>{btn.addEventListener('click',()=>currentBet=parseInt(btn.dataset.bet));});
+
+function spinReels(){
+if(currentBet>balance){message.textContent="Not enough balance!";return;}
+balance-=currentBet; updateBalance();
+message.textContent="Spinning..."; spinSound.currentTime=0; spinSound.play();
+const stops=[];
+reels.forEach((reel,i)=>{
+reel.innerHTML="";
+const track=reel;
+todayTheme.forEach(imgSrc=>{const img=document.createElement('img'); img.src=imgSrc; track.appendChild(img);});
+let pos=0,speed=50+Math.random()*30,stopIndex=Math.floor(Math.random()*todayTheme.length);
+const interval=setInterval(()=>{pos+=speed;if(pos>=70*todayTheme.length){pos=0;}track.style.transform=`translateY(${-pos}px)`;},50);
+setTimeout(()=>{
+clearInterval(interval); track.style.transform=`translateY(${-stopIndex*70}px)`; stops.push(todayTheme[stopIndex]);
+stopSound.currentTime=0; stopSound.play();
+if(stops.length===reels.length){checkResult(stops);}
+},1200+Math.random()*1000);
+});
+}
+
+function checkResult(stops){
+let counts={}; stops.forEach(s=>counts[s]=(counts[s]||0)+1);
+let maxMatch=Math.max(...Object.values(counts)); let reward=0;
+if(maxMatch===5){reward=currentBet*10; message.textContent=`🎉 Five of a kind! Reward: ${reward} 💰`; winSound.play(); for(let i=0;i<25;i++) spawnParticle("💎"); flashBackground();}
+else if(maxMatch>=3){reward=currentBet*3; message.textContent=`✨ Small win! Reward: ${reward} 💰`; winSound.play(); for(let i=0;i<15;i++) spawnParticle("⭐");}
+else{message.textContent="No win, try again!";}
+balance+=reward; updateBalance();
+}
+
+document.getElementById('startSpin').addEventListener('click',spinReels);
+updateBalance();
+</script>
